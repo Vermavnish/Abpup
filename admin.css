@@ -1,105 +1,89 @@
-/* Base styles (same as before) */
-body {
-  font-family: 'Poppins', sans-serif;
+/* Reset & Base Styles */
+* {
   margin: 0;
   padding: 0;
-  background: #f0f4f8;
-  color: #333;
-}
-
-h1 {
-  text-align: center;
-  padding: 20px;
-  background-color: #4a90e2;
-  color: white;
-  margin: 0;
-  font-size: 28px;
-  letter-spacing: 1px;
-}
-
-.dashboard {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 20px;
-  padding: 20px;
-  max-width: 1200px;
-  margin: auto;
-}
-
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s;
-}
-
-.card:hover {
-  transform: translateY(-4px);
-}
-
-.card h2 {
-  font-size: 18px;
-  margin-bottom: 15px;
-  color: #4a4a4a;
-}
-
-input,
-select,
-button {
-  display: block;
-  width: 100%;
-  padding: 14px 16px;
-  margin-bottom: 14px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  font-size: 15px;
   box-sizing: border-box;
 }
 
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f5f7fa;
+  color: #333;
+  padding: 20px 10px;
+}
+
+/* Page Title */
+h1 {
+  text-align: center;
+  color: #1a73e8;
+  font-size: 24px;
+  margin-bottom: 30px;
+}
+
+/* Dashboard Layout */
+.dashboard {
+  max-width: 500px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Card Style (like Login Box) */
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.card h2 {
+  font-size: 16px;
+  color: #222;
+  margin-bottom: 16px;
+}
+
+/* Form Inputs */
+input, select {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 15px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* Buttons */
 button {
-  background-color: #4a90e2;
-  color: white;
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  color: #fff;
+  background-color: #1a73e8;
   border: none;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s;
 }
 
 button:hover {
-  background-color: #357ABD;
+  background-color: #0f5ed7;
 }
 
-/* RESPONSIVE TWEAKS */
+/* Responsive */
 @media screen and (max-width: 480px) {
   h1 {
-    font-size: 22px;
-    padding: 16px;
-  }
-
-  .dashboard {
-    padding: 10px;
-    grid-template-columns: 1fr;
-    gap: 18px;
+    font-size: 20px;
   }
 
   .card {
-    padding: 16px;
+    padding: 20px;
   }
 
-  .card h2 {
-    font-size: 16px;
-  }
-
-  input,
-  select,
-  button {
+  input, select, button {
     font-size: 14px;
-    padding: 13px;
-    margin-bottom: 12px;
-  }
-
-  button {
-    font-size: 15px;
+    padding: 11px;
   }
 }

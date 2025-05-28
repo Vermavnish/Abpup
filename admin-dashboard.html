@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ABP Classes</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <p>Manage batches, subjects, chapters, and handle enrollment requests.</p>
+
+        <button class="logout-btn">Logout</button>
+
+        <hr>
+
+        <h2>Create New Batch</h2>
+        <form class="admin-form" id="createBatchForm">
+            <label for="batchName">Batch Name:</label>
+            <input type="text" id="batchName" placeholder="e.g., JEE Advanced 2025" required>
+
+            <label for="batchDescription">Description:</label>
+            <textarea id="batchDescription" rows="4" placeholder="Detailed description of the batch"></textarea>
+
+            <label for="batchStartDate">Start Date:</label>
+            <input type="date" id="batchStartDate">
+
+            <button type="submit">Create Batch</button>
+            <p class="message" id="batchMessage"></p>
+        </form>
+
+        <hr>
+
+        <h2>Pending Enrollment Requests</h2>
+        <div class="enrollment-requests" id="enrollmentRequestsList">
+            <p>Loading pending requests...</p>
+        </div>
+        <p class="message" id="requestActionMessage"></p>
+    </div>
+
+    <script type="module" src="js/firebase-init.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>

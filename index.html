@@ -3,26 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login / Signup</title>
-  <link rel="stylesheet" href="style.css"/>
-  <script type="module" src="script.js" defer></script>
+  <title>ABP Classes - Login / Signup</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h2>Education App</h2>
-
-    <div class="form-box">
-      <input type="email" id="email" placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
-      <button id="loginBtn">Login</button>
-      <button id="signupBtn">Signup</button>
-      <p id="message"></p>
+    <h1>ABP Classes</h1>
+    <div class="tabs">
+      <button id="showLogin">Login</button>
+      <button id="showSignup">Signup</button>
     </div>
+
+    <div id="loginForm" class="form">
+      <input type="email" id="loginEmail" placeholder="Email" required />
+      <input type="password" id="loginPassword" placeholder="Password" required />
+      <button onclick="login()">Login</button>
+    </div>
+
+    <div id="signupForm" class="form" style="display: none;">
+      <input type="text" id="signupName" placeholder="Full Name" required />
+      <input type="email" id="signupEmail" placeholder="Email" required />
+      <input type="password" id="signupPassword" placeholder="Password" required />
+      <button onclick="signup()">Signup</button>
+    </div>
+
+    <p id="message"></p>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script type="module">
-    // Firebase SDKs will be handled in script.js
-  </script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

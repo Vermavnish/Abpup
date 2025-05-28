@@ -80,13 +80,13 @@ if (userLoginForm) {
         }
     });
 
-    registerLink.addEventListener('click', (e) => {
+   /* registerLink.addEventListener('click', (e) => {
         e.preventDefault();
         // Redirect to a dedicated registration page if you have one, or show a modal
         // For simplicity, let's assume a conceptual 'user-register.html'
         alert("Registration is currently handled by admin or needs a 'user-register.html' page.");
         // window.location.href = 'user-register.html'; // Uncomment if you create this page
-    });
+    });*/
 }
 
 // --- User Home Page Logic (`user-home.html`) ---
@@ -278,4 +278,46 @@ if (batchDetailsContainer) {
             batchDetailsContainer.innerHTML = `<p class="error">Failed to load batch details: ${error.message}</p>`;
         }
     }
+}
+// user.js (add this to the end of the file)
+
+// --- Registration Page Logic (`user-register.html`) ---
+const userRegistrationForm = document.getElementById('userRegistrationForm');
+const registerButton = document.getElementById('registerButton');
+const registrationMessage = document.getElementById('registrationMessage');
+
+
+if (userRegistrationForm) {
+    userRegistrationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearMessage(registrationMessage);
+        registerButton.disabled = true;
+
+        const name = userRegistrationForm['regName'].value;
+        const email = userRegistrationForm['regEmail'].value;
+        const password = userRegistrationForm['regPassword'].value;
+
+        try {
+            // Call the registerUser function from auth.js
+            await registerUser(email, password, name, 'student'); // Default role is 'student'
+            displayMessage(registrationMessage, "Registration successful! You can now log in.", "success");
+            userRegistrationForm.reset();
+            // Optionally, redirect to login page after successful registration
+            setTimeout(() => {
+                window.location.href = 'user-login.html';
+            }, 2000);
+        } catch (error) {
+            let errorMessage = "Registration failed.";
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = "This email is already registered.";
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = "Password should be at least 6 characters.";
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = "Please enter a valid email address.";
+            }
+            displayMessage(registrationMessage, errorMessage, "error");
+        } finally {
+            registerButton.disabled = false;
+        }
+    });
 }

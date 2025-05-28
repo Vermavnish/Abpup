@@ -1,112 +1,52 @@
-// auth.js
+// utils/auth.js
+import { auth } from '../firebase-config.js';
 
-import { auth, db } from './firebase-init.js';
-import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    sendPasswordResetEmail
-} from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+const ADMIN_EMAIL = 'admin@abp.com';
 
-// --- User/Admin Registration ---
-export async function registerUser(email, password, displayName, role = 'student') {
+/**
+ * Handles user login.
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<Object>} User object if successful, throws error otherwise.
+ */
+async function loginUser(email, password) {
     try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // Save user data to Firestore
-        await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            email: user.email,
-            displayName: displayName,
-            role: role, // 'student' or 'admin'
-            createdAt: new Date()
-        });
-
-        console.log("User registered and data saved:", user);
-        return user;
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        return userCredential.user;
     } catch (error) {
-        console.error("Error registering user:", error.message);
-        throw error; // Re-throw to handle in UI
-    }
-}
-
-// --- User/Admin Login ---
-export async function loginUser(email, password) {
-    try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // You might want to fetch user role here if needed immediately after login
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-            console.log("User logged in:", user.email, "Role:", userDoc.data().role);
-            return userDoc.data(); // Return user data including role
-        } else {
-            console.warn("User data not found in Firestore for:", user.uid);
-            return null; // Or throw an error if user data must exist
-        }
-    } catch (error) {
-        console.error("Error logging in user:", error.message);
+        console.error("Login Error:", error.message);
         throw error;
     }
 }
 
-// --- User/Admin Logout ---
-export async function logoutUser() {
+/**
+ * Handles user logout.
+ */
+async function logoutUser() {
     try {
-        await signOut(auth);
+        await auth.signOut();
         console.log("User logged out.");
     } catch (error) {
-        console.error("Error logging out user:", error.message);
+        console.error("Logout Error:", error.message);
         throw error;
     }
 }
 
-// --- Password Reset ---
-export async function resetPassword(email) {
-    try {
-        await sendPasswordResetEmail(auth, email);
-        console.log("Password reset email sent to:", email);
-        return true;
-    } catch (error) {
-        console.error("Error sending password reset email:", error.message);
-        throw error;
-    }
+/**
+ * Checks if the current authenticated user is the admin.
+ * @param {Object} user - The Firebase User object.
+ * @returns {boolean} True if the user is the admin, false otherwise.
+ */
+function isAdmin(user) {
+    return user && user.email === ADMIN_EMAIL;
 }
 
-// --- Auth State Listener ---
-// Use this to check if a user is logged in and redirect accordingly
-export function setupAuthListener(callback) {
-    return onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            // User is logged in, fetch their role from Firestore
-            const userDocRef = doc(db, "users", user.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-                const userData = userDocSnap.data();
-                callback({ ...user, role: userData.role }); // Augment user object with role
-            } else {
-                console.warn("User data not found in Firestore for UID:", user.uid);
-                callback(user); // Return basic user object if data not found
-            }
-        } else {
-            // User is logged out
-            callback(null);
-        }
-    });
+/**
+ * Sets up an authentication state observer.
+ * @param {Function} callback - Function to call with the current user object.
+ */
+function onAuthStateChange(callback) {
+    auth.onAuthStateChanged(callback);
 }
 
-// Function to check if a user is an admin
-export async function isAdmin(uid) {
-    if (!uid) return false;
-    try {
-        const userDoc = await getDoc(doc(db, "users", uid));
-        return userDoc.exists() && userDoc.data().role === 'admin';
-    } catch (error) {
-        console.error("Error checking admin status:", error);
-        return false;
-    }
-}
+export { loginUser, logoutUser, isAdmin, onAuthStateChange, ADMIN_EMAIL };

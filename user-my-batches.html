@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Batches - ABP Classes</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>My Batches</h1>
+        <p>Here you can see the status of your enrollment requests and access content for approved batches.</p>
+
+        <button class="logout-btn">Logout</button>
+
+        <h2>My Enrollment Status</h2>
+        <div class="batch-list" id="myEnrollmentList">
+            <p>Loading your enrollments...</p>
+        </div>
+
+        <div class="nav">
+            <a href="user-home.html">Explore More Batches</a>
+        </div>
+    </div>
+
+    <script type="module" src="js/firebase-init.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/user.js"></script>
+</body>
+</html>

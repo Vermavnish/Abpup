@@ -1,38 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ABP Classes - Login / Signup</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Login</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script src="firebase-config.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>ABP Classes</h1>
-    <div class="tabs">
-      <button id="showLogin">Login</button>
-      <button id="showSignup">Signup</button>
-    </div>
-
-    <div id="loginForm" class="form">
-      <input type="email" id="loginEmail" placeholder="Email" required />
-      <input type="password" id="loginPassword" placeholder="Password" required />
-      <button onclick="login()">Login</button>
-    </div>
-
-    <div id="signupForm" class="form" style="display: none;">
-      <input type="text" id="signupName" placeholder="Full Name" required />
-      <input type="email" id="signupEmail" placeholder="Email" required />
-      <input type="password" id="signupPassword" placeholder="Password" required />
-      <button onclick="signup()">Signup</button>
-    </div>
-
-    <p id="message"></p>
-  </div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js"></script>
+  <h2>Admin Login</h2>
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  
   <script src="script.js"></script>
 </body>
 </html>

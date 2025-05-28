@@ -29,7 +29,13 @@ document.getElementById("loginBtn").addEventListener("click", () => {
     .then((userCredential) => {
       document.getElementById("message").innerText = "Login successful!";
       console.log("Logged in:", userCredential.user);
-      // Redirect or load dashboard
+
+      // 🔑 Admin check
+      if (email === "admin@abp.com") {
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "student.html";
+      }
     })
     .catch((error) => {
       document.getElementById("message").innerText = error.message;

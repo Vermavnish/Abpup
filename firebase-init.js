@@ -1,26 +1,31 @@
-// js/firebase-init.js
+// firebase-init.js
 
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import { getAuth } from "firebase/auth"; // For authentication
+import { getFirestore } from "firebase/firestore"; // For database
+import { getStorage } from "firebase/storage"; // For file storage
 
 // Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAkSFTP7cb4i-BzUFbvKNGCMXTCWMOc3gw",
-  authDomain: "abptest3-595bb.firebaseapp.com",
-  projectId: "abptest3-595bb",
-  storageBucket: "abptest3-595bb.firebasestorage.app",
-  messagingSenderId: "609413076048",
-  appId: "1:609413076048:web:eb0acf7c57909660962d55",
-  measurementId: "G-NG3GBECDEH"
+  apiKey: "AIzaSyDw5IKZIiMvlvS1L8ofg6cKKMtXrVeN6zQ",
+  authDomain: "avni-c6af6.firebaseapp.com",
+  databaseURL: "https://avni-c6af6-default-rtdb.firebaseio.com", // You might primarily use Firestore, but Realtime DB is also available.
+  projectId: "avni-c6af6",
+  storageBucket: "avni-c6af6.firebasestorage.app",
+  messagingSenderId: "158260273585",
+  appId: "1:158260273585:web:06f310e48a87f404815d90",
+  measurementId: "G-ZBNE463P71"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app); // Optional, for analytics
-const auth = getAuth(app); // For authentication
-const db = getFirestore(app); // For database operations (Firestore)
+const analytics = getAnalytics(app);
+const auth = getAuth(app);      // Initialize Auth service
+const db = getFirestore(app);   // Initialize Firestore service
+const storage = getStorage(app); // Initialize Storage service
 
-export { app, auth, db }; // Export them so other JS files can use them
+// Export the initialized services for use in other files
+export { app, analytics, auth, db, storage };

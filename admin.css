@@ -1,94 +1,70 @@
-/* Google Font */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
-* {
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
-}
+/* admin.css */
 
 body {
+  font-family: 'Poppins', sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f2f6fc;
+  background: #f0f4f8;
   color: #333;
 }
 
 h1 {
   text-align: center;
-  margin: 40px 0 20px;
-  font-size: 36px;
-  color: #2c3e50;
+  padding: 20px 0;
+  background-color: #4a90e2;
+  color: white;
+  margin: 0;
+  font-size: 32px;
+  letter-spacing: 1px;
 }
 
 .dashboard {
-  max-width: 1000px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 30px;
+  max-width: 1200px;
   margin: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  padding: 0 20px 40px;
 }
 
 .card {
-  background-color: #fff;
-  padding: 30px;
+  background: white;
+  padding: 20px 25px;
   border-radius: 16px;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s;
 }
 
 .card:hover {
-  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.08);
-  transform: translateY(-4px);
+  transform: translateY(-5px);
 }
 
 .card h2 {
-  margin: 0 0 20px;
-  font-size: 22px;
-  color: #2980b9;
-}
-
-.card input,
-.card select {
+  font-size: 20px;
   margin-bottom: 15px;
-  padding: 12px 14px;
+  color: #4a4a4a;
+}
+
+input, select, button {
+  display: block;
   width: 100%;
-  max-width: 500px;
-  border: 1px solid #d0d7e2;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border: 1px solid #ccc;
   border-radius: 10px;
-  font-size: 16px;
-  background-color: #fdfdfd;
-  transition: border-color 0.3s ease;
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
-.card input:focus,
-.card select:focus {
-  border-color: #3498db;
-  outline: none;
-}
-
-.card button {
-  margin-top: 10px;
-  padding: 12px 20px;
-  background-color: #3498db;
-  color: #fff;
+button {
+  background-color: #4a90e2;
+  color: white;
   border: none;
   font-weight: 600;
-  font-size: 16px;
-  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  width: fit-content;
+  transition: background-color 0.2s ease;
 }
 
-.card button:hover {
-  background-color: #2980b9;
+button:hover {
+  background-color: #357ABD;
 }
-
-@media (max-width: 600px) {
-  .card input,
-  .card select,
-  .card button {
-    width: 100%;
-    max-width: 100%;
-  }

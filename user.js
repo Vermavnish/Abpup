@@ -1,184 +1,281 @@
-// js/user.js
+// user.js
 
-import { auth, db } from './firebase-init.js';
-import { setupAuthProtection } from './auth.js';
-import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { loginUser, logoutUser, setupAuthListener, resetPassword, registerUser } from './auth.js';
+import { db } from './firebase-init.js';
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 
-// Call auth protection for user pages
-setupAuthProtection('user-login.html', false);
+// --- DOM Elements ---
+const userLoginForm = document.getElementById('userLoginForm');
+const loginMessage = document.getElementById('loginMessage');
+const loginButton = document.getElementById('loginButton');
+const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+const registerLink = document.getElementById('registerLink');
 
-const batchListContainer = document.getElementById('batchList');
-const enrollmentMessage = document.getElementById('enrollmentMessage');
-const myEnrollmentListContainer = document.getElementById('myEnrollmentList');
+const userDisplayNameSpan = document.getElementById('userDisplayName');
+const logoutButton = document.getElementById('logoutButton');
+const enrolledBatchesList = document.getElementById('enrolledBatchesList');
+const upcomingClassesList = document.getElementById('upcomingClassesList');
+const announcementsList = document.getElementById('announcementsList');
 
-let currentUserId = null;
+const registrationForm = document.getElementById('registrationForm'); // For a separate registration page
+const registrationMessage = document.getElementById('registrationMessage');
 
-// Get current user ID once authenticated
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUserId = user.uid;
-        // Fetch data once user is confirmed
-        if (batchListContainer) {
-            fetchBatches();
+
+// --- Helper for messages ---
+function displayMessage(element, message, type) {
+    element.textContent = message;
+    element.className = `message ${type}`;
+    element.style.display = 'block';
+}
+
+function clearMessage(element) {
+    element.textContent = '';
+    element.className = 'message';
+    element.style.display = 'none';
+}
+
+// --- Login Page Logic (`user-login.html`) ---
+if (userLoginForm) {
+    userLoginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearMessage(loginMessage);
+        loginButton.disabled = true;
+
+        const email = userLoginForm['email'].value;
+        const password = userLoginForm['password'].value;
+
+        try {
+            const userData = await loginUser(email, password);
+            if (userData.role === 'student') {
+                window.location.href = 'user-home.html';
+            } else {
+                // If an admin tries to login through user login, log them out
+                // or show an error and redirect to admin login.
+                await logoutUser(); // Log out the admin if they tried to login here
+                displayMessage(loginMessage, "Access Denied: Please use the admin login page.", "error");
+            }
+        } catch (error) {
+            let errorMessage = "Login failed. Please check your credentials.";
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                errorMessage = "Invalid email or password.";
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = "Please enter a valid email address.";
+            }
+            displayMessage(loginMessage, errorMessage, "error");
+        } finally {
+            loginButton.disabled = false;
         }
-        if (myEnrollmentListContainer) {
-            fetchMyEnrollments();
+    });
+
+    forgotPasswordLink.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const email = prompt("Please enter your email to reset password:");
+        if (email) {
+            try {
+                await resetPassword(email);
+                alert("Password reset email sent. Please check your inbox.");
+            } catch (error) {
+                alert(`Failed to send reset email: ${error.message}`);
+            }
         }
-    }
-});
+    });
 
+    registerLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Redirect to a dedicated registration page if you have one, or show a modal
+        // For simplicity, let's assume a conceptual 'user-register.html'
+        alert("Registration is currently handled by admin or needs a 'user-register.html' page.");
+        // window.location.href = 'user-register.html'; // Uncomment if you create this page
+    });
+}
 
-// --- Fetch and Display Batches on User Home Page ---
-async function fetchBatches() {
-    if (!batchListContainer) return; // Only run if on the correct page
-
-    batchListContainer.innerHTML = '<p>Loading batches...</p>';
-    try {
-        const querySnapshot = await getDocs(collection(db, "batches"));
-        let batchesHtml = '';
-        if (querySnapshot.empty) {
-            batchesHtml = '<p>No batches available yet.</p>';
+// --- User Home Page Logic (`user-home.html`) ---
+if (userDisplayNameSpan && logoutButton) {
+    setupAuthListener(async (user) => {
+        if (user && user.role === 'student') {
+            userDisplayNameSpan.textContent = user.displayName || user.email;
+            await loadUserDashboardData(user.uid);
         } else {
-            const batchPromises = querySnapshot.docs.map(async (docSnapshot) => {
-                const batch = docSnapshot.data();
-                const batchId = docSnapshot.id;
+            // Not a student or logged out, redirect to login
+            window.location.href = 'user-login.html';
+        }
+    });
 
-                // Check if user has already requested or is enrolled in this batch
-                const q = query(collection(db, "enrollmentRequests"),
-                                where("userId", "==", currentUserId),
-                                where("batchId", "==", batchId));
-                const existingRequest = await getDocs(q);
+    logoutButton.addEventListener('click', async () => {
+        try {
+            await logoutUser();
+            window.location.href = 'user-login.html';
+        } catch (error) {
+            console.error("Logout failed:", error);
+            alert("Logout failed. Please try again.");
+        }
+    });
 
-                let buttonHtml = '';
-                if (!existingRequest.empty) {
-                    const requestStatus = existingRequest.docs[0].data().status;
-                    if (requestStatus === 'pending') {
-                        buttonHtml = `<button disabled>Request Pending</button>`;
-                    } else if (requestStatus === 'approved') {
-                        buttonHtml = `<button disabled style="background-color: #5cb85c;">Enrolled!</button>`;
-                    } else if (requestStatus === 'denied') {
-                        buttonHtml = `<button disabled style="background-color: #f0ad4e;">Request Denied</button>`;
-                    }
+    async function loadUserDashboardData(uid) {
+        try {
+            // Fetch user's enrolled batches
+            const userDocRef = doc(db, "users", uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data();
+                const enrolledBatchIds = userData.enrolledBatches || [];
+
+                if (enrolledBatchIds.length > 0) {
+                    const batchesQuery = query(collection(db, "batches"), where("id", "in", enrolledBatchIds)); // Assuming batch 'id' is stored
+                    const batchDocs = await getDocs(batchesQuery);
+                    enrolledBatchesList.innerHTML = ''; // Clear previous content
+                    batchDocs.forEach(batchDoc => {
+                        const batch = batchDoc.data();
+                        const batchItem = document.createElement('div');
+                        batchItem.className = 'batch-card';
+                        batchItem.innerHTML = `
+                            <div>
+                                <h4>${batch.name}</h4>
+                                <p>Course: ${batch.courseName || 'N/A'}</p>
+                                <p>Instructor: ${batch.instructor || 'N/A'}</p>
+                                <p>Start Date: ${new Date(batch.startDate.seconds * 1000).toLocaleDateString()}</p>
+                            </div>
+                            <button onclick="window.location.href='user-my-batches.html?batchId=${batch.id}'">View Batch</button>
+                        `;
+                        enrolledBatchesList.appendChild(batchItem);
+                    });
                 } else {
-                    buttonHtml = `<button data-batch-id="${batchId}">Request Enrollment</button>`;
+                    enrolledBatchesList.innerHTML = '<p>You are not currently enrolled in any batches. Explore our courses!</p>';
                 }
 
-                return `
-                    <div class="batch-card">
-                        <h3>${batch.name}</h3>
-                        <p>${batch.description}</p>
-                        <p>Starts: ${batch.startDate || 'N/A'}</p>
-                        ${buttonHtml}
-                    </div>
-                `;
-            });
-            const resolvedBatchesHtml = await Promise.all(batchPromises);
-            batchesHtml = resolvedBatchesHtml.join('');
+                // Fetch recent announcements for students (or specific batches)
+                const announcementsQuery = query(
+                    collection(db, "announcements"),
+                    where("targetAudience", "in", ["all", "students"]), // Or specific batch IDs
+                    // orderBy("createdAt", "desc"), // Requires index in Firebase
+                    // limit(5) // Requires index in Firebase
+                );
+                const announcementDocs = await getDocs(announcementsQuery);
+                announcementsList.innerHTML = '';
+                if (!announcementDocs.empty) {
+                    announcementDocs.forEach(doc => {
+                        const announcement = doc.data();
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>${announcement.title}</strong>: ${announcement.content} <small>(${new Date(announcement.createdAt.seconds * 1000).toLocaleDateString()})</small>`;
+                        announcementsList.appendChild(li);
+                    });
+                } else {
+                    announcementsList.innerHTML = '<p>No new announcements.</p>';
+                }
+
+                // Placeholder for Upcoming Classes (you'd need a `schedule` or `lessons` collection)
+                upcomingClassesList.innerHTML = '<p>No upcoming classes scheduled yet.</p>';
+
+
+            } else {
+                console.error("User document not found for:", uid);
+                // Handle case where user auth exists but Firestore doc is missing
+                await logoutUser(); // Log them out
+            }
+        } catch (error) {
+            console.error("Error loading user dashboard data:", error);
+            enrolledBatchesList.innerHTML = '<p class="error">Error loading batches.</p>';
+            announcementsList.innerHTML = '<p class="error">Error loading announcements.</p>';
         }
-        batchListContainer.innerHTML = batchesHtml;
-
-        // Add event listeners after batches are rendered
-        document.querySelectorAll('.batch-card button[data-batch-id]').forEach(button => {
-            button.addEventListener('click', sendEnrollmentRequest);
-        });
-
-    } catch (error) {
-        console.error("Error fetching batches:", error);
-        batchListContainer.innerHTML = '<p class="message error">Error loading batches. Please try again.</p>';
     }
 }
 
-// --- Send Enrollment Request ---
-async function sendEnrollmentRequest(event) {
-    const batchId = event.target.dataset.batchId;
-    if (!currentUserId) {
-        enrollmentMessage.className = 'message error';
-        enrollmentMessage.textContent = 'Please log in to send a request.';
-        return;
-    }
+// --- My Batches Page Logic (`user-my-batches.html`) ---
+const batchDetailsContainer = document.getElementById('batchDetailsContainer');
 
-    try {
-        await addDoc(collection(db, "enrollmentRequests"), {
-            userId: currentUserId,
-            batchId: batchId,
-            status: 'pending', // 'pending', 'approved', 'denied'
-            requestDate: new Date()
-        });
-        enrollmentMessage.className = 'message success';
-        enrollmentMessage.textContent = 'Enrollment request sent successfully!';
-        event.target.disabled = true; // Disable button
-        event.target.textContent = 'Request Pending'; // Update button text
-        setTimeout(() => enrollmentMessage.textContent = '', 3000); // Clear message
-    } catch (error) {
-        console.error("Error sending enrollment request:", error);
-        enrollmentMessage.className = 'message error';
-        enrollmentMessage.textContent = 'Failed to send request: ' + error.message;
-    }
-}
+if (batchDetailsContainer) {
+    setupAuthListener(async (user) => {
+        if (user && user.role === 'student') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const batchId = urlParams.get('batchId');
 
-
-// --- Fetch and Display User's Enrollments on My Batches Page ---
-async function fetchMyEnrollments() {
-    if (!myEnrollmentListContainer || !currentUserId) return;
-
-    myEnrollmentListContainer.innerHTML = '<p>Loading your enrollments...</p>';
-    try {
-        const q = query(collection(db, "enrollmentRequests"), where("userId", "==", currentUserId));
-        const querySnapshot = await getDocs(q);
-
-        let myEnrollmentsHtml = '';
-        if (querySnapshot.empty) {
-            myEnrollmentsHtml = '<p>You have no pending or approved enrollments.</p>';
+            if (batchId) {
+                await loadBatchDetails(batchId, user.uid);
+            } else {
+                batchDetailsContainer.innerHTML = '<p class="error">No batch selected. Please go to <a href="user-home.html">User Home</a> to select a batch.</p>';
+            }
         } else {
-            const enrollmentPromises = querySnapshot.docs.map(async (docSnapshot) => {
-                const request = docSnapshot.data();
-                const batchDoc = await getDoc(doc(db, "batches", request.batchId));
-                if (!batchDoc.exists()) return ''; // Skip if batch not found
-
-                const batch = batchDoc.data();
-                let statusText = '';
-                let contentButton = '';
-
-                switch (request.status) {
-                    case 'pending':
-                        statusText = '<span style="color: orange;">Pending Admin Approval</span>';
-                        break;
-                    case 'approved':
-                        statusText = '<span style="color: green;">Approved!</span>';
-                        // Placeholder for content access - you'd fetch subjects/chapters here
-                        contentButton = `<button onclick="alert('Accessing content for ${batch.name} (Coming Soon)!')">Access Content</button>`;
-                        // In a real app, you'd fetch subjects, chapters, videos, PDFs here
-                        // For example:
-                        // const subjectsQ = query(collection(db, "batches", request.batchId, "subjects"));
-                        // const subjectsSnap = await getDocs(subjectsQ);
-                        // subjectsSnap.forEach(subDoc => {
-                        //    // Render subjects, then chapters, then videos/PDFs
-                        // });
-                        break;
-                    case 'denied':
-                        statusText = `<span style="color: red;">Denied</span>`;
-                        if (request.denialReason) {
-                            statusText += `<p>Reason: ${request.denialReason}</p>`;
-                        }
-                        break;
-                }
-
-                return `
-                    <div class="batch-card">
-                        <h3>${batch.name}</h3>
-                        <p>Request Status: ${statusText}</p>
-                        ${contentButton}
-                    </div>
-                `;
-            });
-            const resolvedEnrollmentsHtml = await Promise.all(enrollmentPromises);
-            myEnrollmentsHtml = resolvedEnrollmentsHtml.join('');
+            window.location.href = 'user-login.html';
         }
-        myEnrollmentListContainer.innerHTML = myEnrollmentsHtml;
+    });
 
-    } catch (error) {
-        console.error("Error fetching my enrollments:", error);
-        myEnrollmentListContainer.innerHTML = '<p class="message error">Error loading your enrollments. Please try again.</p>';
+    async function loadBatchDetails(batchId, userId) {
+        try {
+            const batchDocRef = doc(db, "batches", batchId);
+            const batchDocSnap = await getDoc(batchDocRef);
+
+            const userDocRef = doc(db, "users", userId);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (!batchDocSnap.exists()) {
+                batchDetailsContainer.innerHTML = '<p class="error">Batch not found.</p>';
+                return;
+            }
+
+            const batchData = batchDocSnap.data();
+            const userData = userDocSnap.data();
+
+            // Basic check if user is enrolled (more robust check with security rules)
+            if (!userData || !userData.enrolledBatches || !userData.enrolledBatches.includes(batchId)) {
+                batchDetailsContainer.innerHTML = '<p class="error">You are not enrolled in this batch.</p>';
+                return;
+            }
+
+            batchDetailsContainer.innerHTML = `
+                <h2>${batchData.name}</h2>
+                <p><strong>Course:</strong> ${batchData.courseName || 'N/A'}</p>
+                <p><strong>Instructor:</strong> ${batchData.instructor || 'N/A'}</p>
+                <p><strong>Start Date:</strong> ${new Date(batchData.startDate.seconds * 1000).toLocaleDateString()}</p>
+                <p><strong>Description:</strong> ${batchData.description || 'No description provided.'}</p>
+
+                <h3>Study Materials</h3>
+                <ul id="studyMaterialsList">
+                    </ul>
+
+                <h3>Assignments</h3>
+                <ul id="assignmentsList">
+                    </ul>
+
+                `;
+
+            // Load Study Materials (assuming a 'lessons' or 'materials' subcollection under batches)
+            const materialsQuery = query(collection(db, "batches", batchId, "materials")); // Example path
+            const materialDocs = await getDocs(materialsQuery);
+            const studyMaterialsList = document.getElementById('studyMaterialsList');
+            if (!materialDocs.empty) {
+                materialDocs.forEach(materialDoc => {
+                    const material = materialDoc.data();
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="${material.url}" target="_blank">${material.title} (${material.type})</a>`;
+                    studyMaterialsList.appendChild(li);
+                });
+            } else {
+                studyMaterialsList.innerHTML = '<li>No study materials available yet.</li>';
+            }
+
+            // Load Assignments (assuming an 'assignments' subcollection under batches)
+            const assignmentsQuery = query(collection(db, "batches", batchId, "assignments")); // Example path
+            const assignmentDocs = await getDocs(assignmentsQuery);
+            const assignmentsList = document.getElementById('assignmentsList');
+            if (!assignmentDocs.empty) {
+                assignmentsList.forEach(assignmentDoc => {
+                    const assignment = assignmentDoc.data();
+                    const li = document.createElement('li');
+                    // You'd add logic here for submission, status, etc.
+                    li.innerHTML = `
+                        <strong>${assignment.title}</strong> - Due: ${new Date(assignment.dueDate.seconds * 1000).toLocaleDateString()}
+                        <a href="${assignment.materialUrl}" target="_blank">View Assignment</a>
+                        `;
+                    assignmentsList.appendChild(li);
+                });
+            } else {
+                assignmentsList.innerHTML = '<li>No assignments posted yet.</li>';
+            }
+
+        } catch (error) {
+            console.error("Error loading batch details:", error);
+            batchDetailsContainer.innerHTML = `<p class="error">Failed to load batch details: ${error.message}</p>`;
+        }
     }
 }

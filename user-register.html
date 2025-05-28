@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - ABP Classes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">ABP Classes</a>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="user-login.html">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="auth-form">
+            <h2>Register for ABP Classes</h2>
+            <form id="userRegistrationForm">
+                <div class="form-group">
+                    <label for="regName">Your Name:</label>
+                    <input type="text" id="regName" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email:</label>
+                    <input type="email" id="regEmail" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password:</label>
+                    <input type="password" id="regPassword" required autocomplete="new-password">
+                </div>
+                <button type="submit" id="registerButton">Register</button>
+                <div class="message" id="registrationMessage"></div>
+            </form>
+            <div class="link-text">
+                Already have an account? <a href="user-login.html">Login Here</a>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="user.js"></script>
+</body>
+</html>

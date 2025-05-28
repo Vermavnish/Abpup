@@ -1,6 +1,6 @@
 body {
-  font-family: sans-serif;
-  background-color: #f0f0f0;
+  font-family: Arial, sans-serif;
+  background: #f5f7fa;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -8,35 +8,39 @@ body {
 }
 
 .container {
-  background: #fff;
+  background: white;
   padding: 30px;
   border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  width: 300px;
+  text-align: center;
 }
 
-.form-box {
-  display: flex;
-  flex-direction: column;
+.tabs button {
+  margin: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
 }
 
-input {
-  margin-bottom: 10px;
+.form input {
+  display: block;
+  width: 90%;
   padding: 10px;
-  border: 1px solid #ddd;
+  margin: 10px auto;
+  border: 1px solid #ccc;
   border-radius: 5px;
 }
 
-button {
-  padding: 10px;
-  margin-bottom: 5px;
-  background-color: #007bff;
-  border: none;
+.form button {
+  background: #007bff;
   color: white;
+  padding: 10px;
+  border: none;
   border-radius: 5px;
   cursor: pointer;
 }
 
 #message {
   color: green;
-  font-weight: bold;
+  margin-top: 10px;
 }

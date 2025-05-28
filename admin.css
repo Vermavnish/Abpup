@@ -1,5 +1,4 @@
-/* admin.css */
-
+/* Base styles (same as before) */
 body {
   font-family: 'Poppins', sans-serif;
   margin: 0;
@@ -14,13 +13,13 @@ h1 {
   background-color: #4a90e2;
   color: white;
   margin: 0;
-  font-size: 32px;
+  font-size: 28px;
   letter-spacing: 1px;
 }
 
 .dashboard {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 20px;
   padding: 20px;
   max-width: 1200px;
@@ -36,11 +35,11 @@ h1 {
 }
 
 .card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
 }
 
 .card h2 {
-  font-size: 20px;
+  font-size: 18px;
   margin-bottom: 15px;
   color: #4a4a4a;
 }
@@ -50,11 +49,11 @@ select,
 button {
   display: block;
   width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
   border: 1px solid #ccc;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 15px;
   box-sizing: border-box;
 }
 
@@ -71,31 +70,36 @@ button:hover {
   background-color: #357ABD;
 }
 
-/* Responsive tweaks */
+/* RESPONSIVE TWEAKS */
 @media screen and (max-width: 480px) {
   h1 {
-    font-size: 24px;
-    padding: 15px;
+    font-size: 22px;
+    padding: 16px;
   }
 
   .dashboard {
     padding: 10px;
     grid-template-columns: 1fr;
-    gap: 15px;
+    gap: 18px;
   }
 
   .card {
-    padding: 15px;
+    padding: 16px;
+  }
+
+  .card h2 {
+    font-size: 16px;
   }
 
   input,
   select,
   button {
-    font-size: 13px;
-    padding: 10px 12px;
+    font-size: 14px;
+    padding: 13px;
+    margin-bottom: 12px;
   }
 
   button {
-    font-size: 14px;
+    font-size: 15px;
   }
 }

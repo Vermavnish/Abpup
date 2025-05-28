@@ -16,53 +16,54 @@ body {
 h1 {
   text-align: center;
   color: #1a73e8;
-  font-size: 28px;
-  margin-bottom: 35px;
+  font-size: 56px; /* Doubled from 28px */
+  margin-bottom: 40px;
+  font-weight: 700;
 }
 
 /* Dashboard Layout */
 .dashboard {
-  max-width: 600px; /* Increased width */
+  max-width: 700px;
   margin: auto;
   display: flex;
   flex-direction: column;
-  gap: 35px;
+  gap: 45px;
 }
 
 /* Card Style */
 .card {
   background: white;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  padding: 40px;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
 }
 
 .card h2 {
-  font-size: 20px;
+  font-size: 40px; /* Doubled from 20px */
   color: #222;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 /* Form Inputs */
 input, select {
   width: 100%;
-  padding: 16px 18px;
-  margin-bottom: 20px;
-  font-size: 17px;
+  padding: 24px 26px;
+  margin-bottom: 25px;
+  font-size: 34px; /* Doubled from 17px */
   border: 1px solid #ccc;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
 }
 
 /* Buttons */
 button {
   width: 100%;
-  padding: 16px;
-  font-size: 18px;
+  padding: 24px;
+  font-size: 36px; /* Doubled from 18px */
   color: #fff;
   background-color: #1a73e8;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -72,22 +73,26 @@ button:hover {
   background-color: #0f5ed7;
 }
 
-/* Responsive */
+/* Responsive (for small screens) */
 @media screen and (max-width: 480px) {
   h1 {
-    font-size: 24px;
+    font-size: 42px;
   }
 
   .card {
-    padding: 24px;
+    padding: 30px;
+  }
+
+  .card h2 {
+    font-size: 30px;
   }
 
   input, select, button {
-    font-size: 16px;
-    padding: 15px;
+    font-size: 28px;
+    padding: 20px;
   }
 
   .dashboard {
-    gap: 25px;
+    gap: 35px;
   }
-    }
+}

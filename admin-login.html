@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - ABP Classes</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Login</h1>
+
+        <form class="auth-form" id="adminLoginForm">
+            <input type="email" id="adminEmail" placeholder="Admin Email" required>
+            <input type="password" id="adminPassword" placeholder="Admin Password" required>
+            <button type="submit">Login as Admin</button>
+        </form>
+        <p class="message" id="adminLoginMessage"></p>
+
+        <div class="nav">
+            <p>Go back to <a href="index.html">Home</a></p>
+        </div>
+    </div>
+
+    <script type="module" src="js/firebase-init.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>

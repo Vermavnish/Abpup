@@ -3,17 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to ABP Classes</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>ABP Classes - Learn and Grow</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Welcome to ABP Classes, your gateway to quality education. Explore our courses, batches, and experienced faculty.">
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to ABP Classes!</h1>
-        <p>Your journey to knowledge begins here.</p>
-        <div class="nav">
-            <a href="user-login.html">User Login / Signup</a>
-            <a href="admin-login.html">Admin Login</a>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">ABP Classes</a>
+            <ul>
+                <li><a href="#courses">Courses</a></li>
+                <li><a href="#about">About Us</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><a href="user-login.html">Login</a></li>
+                <li><a href="#" id="admin-login-link">Admin Login</a></li> </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-section">
+            <div class="container" style="text-align: center; padding: 100px 0; background-color: var(--primary-color); color: white; margin-top: 0;">
+                <h1>Unlock Your Potential with ABP Classes</h1>
+                <p>High-quality education designed to help you succeed. Join our expert-led batches today!</p>
+                <a href="user-login.html" class="button" style="background-color: white; color: var(--primary-color); text-decoration: none; padding: 10px 25px; border-radius: 5px; margin-top: 20px; display: inline-block;">Enroll Now</a>
+            </div>
+        </section>
+
+        <section id="courses" class="container" style="padding: 60px 20px;">
+            <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 40px;">Our Popular Courses</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+                <div class="course-card" style="background-color: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 25px; text-align: center;">
+                    <h3>Mathematics Mastery</h3>
+                    <p>Comprehensive classes for all levels, from basics to advanced concepts.</p>
+                    <a href="user-login.html" class="button" style="background-color: var(--primary-color); color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; display: inline-block; margin-top: 15px;">View Details</a>
+                </div>
+                <div class="course-card" style="background-color: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 25px; text-align: center;">
+                    <h3>Science Fundamentals</h3>
+                    <p>Engaging lessons in Physics, Chemistry, and Biology to build a strong foundation.</p>
+                    <a href="user-login.html" class="button" style="background-color: var(--primary-color); color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; display: inline-block; margin-top: 15px;">View Details</a>
+                </div>
+                <div class="course-card" style="background-color: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 25px; text-align: center;">
+                    <h3>English Language Skills</h3>
+                    <p>Improve your grammar, vocabulary, and communication skills for academic and professional success.</p>
+                    <a href="user-login.html" class="button" style="background-color: var(--primary-color); color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; display: inline-block; margin-top: 15px;">View Details</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="container" style="padding: 60px 20px; background-color: #e9ecef;">
+            <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 40px;">About ABP Classes</h2>
+            <p style="text-align: center; max-width: 800px; margin: 0 auto;">
+                ABP Classes is dedicated to providing high-quality, accessible education to students of all ages. Our experienced educators, innovative teaching methods, and student-centric approach ensure that every learner achieves their full potential. We believe in fostering a supportive and engaging learning environment.
+            </p>
+        </section>
+
+        <section id="contact" class="container" style="padding: 60px 20px;">
+            <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 40px;">Contact Us</h2>
+            <div style="text-align: center;">
+                <p>Email: info@abpclasses.com</p>
+                <p>Phone: +91 98765 43210</p>
+                <p>Address: 123 Education Lane, Learning City, India</p>
+            </div>
+        </section>
+    </main>
+
+    <footer style="background-color: var(--text-color); color: white; text-align: center; padding: 20px 0; margin-top: 50px;">
+        <div class="container">
+            <p>&copy; 2023 ABP Classes. All rights reserved.</p>
+            <p><a href="#" style="color: white; text-decoration: none;">Privacy Policy</a> | <a href="#" style="color: white; text-decoration: none;">Terms of Service</a></p>
         </div>
-    </div>
+    </footer>
+
+    <script type="module">
+        // Minimal script for redirection
+        document.getElementById('admin-login-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = 'admin-login.html';
+        });
+    </script>
 </body>
 </html>

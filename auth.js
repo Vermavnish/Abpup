@@ -1,120 +1,112 @@
-// js/auth.js
+// auth.js
 
 import { auth, db } from './firebase-init.js';
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
+    signOut,
     onAuthStateChanged,
-    signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    sendPasswordResetEmail
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
-// --- User Authentication Logic ---
-const signupForm = document.getElementById('userSignupForm');
-const loginForm = document.getElementById('userLoginForm');
-const signupMessage = document.getElementById('signupMessage');
-const loginMessage = document.getElementById('loginMessage');
-const logoutBtn = document.querySelector('.logout-btn');
+// --- User/Admin Registration ---
+export async function registerUser(email, password, displayName, role = 'student') {
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-if (signupForm) {
-    signupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = signupForm['signupUsername'].value;
-        const email = signupForm['signupEmail'].value;
-        const password = signupForm['signupPassword'].value;
+        // Save user data to Firestore
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            email: user.email,
+            displayName: displayName,
+            role: role, // 'student' or 'admin'
+            createdAt: new Date()
+        });
 
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // Store user data in Firestore (e.g., username)
-            await setDoc(doc(db, "users", user.uid), {
-                username: username,
-                email: email,
-                isAdmin: false // Default to false for regular users
-            });
-
-            signupMessage.className = 'message success';
-            signupMessage.textContent = 'Signup successful! Redirecting...';
-            setTimeout(() => {
-                window.location.href = 'user-home.html'; // Redirect to user home
-            }, 1500);
-        } catch (error) {
-            signupMessage.className = 'message error';
-            signupMessage.textContent = error.message;
-            console.error("Signup error:", error);
-        }
-    });
+        console.log("User registered and data saved:", user);
+        return user;
+    } catch (error) {
+        console.error("Error registering user:", error.message);
+        throw error; // Re-throw to handle in UI
+    }
 }
 
-if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = loginForm['loginEmail'].value;
-        const password = loginForm['loginPassword'].value;
+// --- User/Admin Login ---
+export async function loginUser(email, password) {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            loginMessage.className = 'message success';
-            loginMessage.textContent = 'Login successful! Redirecting...';
-            setTimeout(() => {
-                window.location.href = 'user-home.html'; // Redirect to user home
-            }, 1500);
-        } catch (error) {
-            loginMessage.className = 'message error';
-            loginMessage.textContent = error.message;
-            console.error("Login error:", error);
+        // You might want to fetch user role here if needed immediately after login
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+            console.log("User logged in:", user.email, "Role:", userDoc.data().role);
+            return userDoc.data(); // Return user data including role
+        } else {
+            console.warn("User data not found in Firestore for:", user.uid);
+            return null; // Or throw an error if user data must exist
         }
-    });
+    } catch (error) {
+        console.error("Error logging in user:", error.message);
+        throw error;
+    }
 }
 
-// --- Logout Functionality ---
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            await signOut(auth);
-            alert('Logged out successfully!');
-            // Redirect to a common login page or public page
-            if (window.location.pathname.includes('admin')) {
-                window.location.href = 'admin-login.html';
-            } else {
-                window.location.href = 'user-login.html';
-            }
-        } catch (error) {
-            console.error("Logout error:", error);
-            alert('Error logging out: ' + error.message);
-        }
-    });
+// --- User/Admin Logout ---
+export async function logoutUser() {
+    try {
+        await signOut(auth);
+        console.log("User logged out.");
+    } catch (error) {
+        console.error("Error logging out user:", error.message);
+        throw error;
+    }
 }
 
-// --- Authentication State Listener (for page protection) ---
-// This ensures that authenticated pages redirect if user is not logged in
-// This needs to be called in every protected page's script (user.js, admin.js)
-export function setupAuthProtection(redirectPath = 'user-login.html', isAdminCheck = false) {
-    onAuthStateChanged(auth, async (user) => {
+// --- Password Reset ---
+export async function resetPassword(email) {
+    try {
+        await sendPasswordResetEmail(auth, email);
+        console.log("Password reset email sent to:", email);
+        return true;
+    } catch (error) {
+        console.error("Error sending password reset email:", error.message);
+        throw error;
+    }
+}
+
+// --- Auth State Listener ---
+// Use this to check if a user is logged in and redirect accordingly
+export function setupAuthListener(callback) {
+    return onAuthStateChanged(auth, async (user) => {
         if (user) {
-            if (isAdminCheck) {
-                // For admin pages, check if the user is an admin
-                const userDocRef = doc(db, "users", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists() && userDocSnap.data().isAdmin) {
-                    // User is logged in and is an admin
-                    console.log("Admin logged in:", user.email);
-                } else {
-                    // User is logged in but not an admin, or admin flag is missing
-                    alert('Access Denied: You are not authorized to view this page.');
-                    await signOut(auth); // Log them out immediately
-                    window.location.href = 'admin-login.html';
-                }
+            // User is logged in, fetch their role from Firestore
+            const userDocRef = doc(db, "users", user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data();
+                callback({ ...user, role: userData.role }); // Augment user object with role
             } else {
-                // Regular user page, user is logged in
-                console.log("User logged in:", user.email);
-                // Optionally update UI for logged in user (e.g., display username)
+                console.warn("User data not found in Firestore for UID:", user.uid);
+                callback(user); // Return basic user object if data not found
             }
         } else {
-            // No user is logged in
-            console.log("No user logged in. Redirecting...");
-            window.location.href = redirectPath;
+            // User is logged out
+            callback(null);
         }
     });
+}
+
+// Function to check if a user is an admin
+export async function isAdmin(uid) {
+    if (!uid) return false;
+    try {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        return userDoc.exists() && userDoc.data().role === 'admin';
+    } catch (error) {
+        console.error("Error checking admin status:", error);
+        return false;
+    }
 }

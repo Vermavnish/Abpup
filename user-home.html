@@ -3,29 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - ABP Classes</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>User Home - ABP Classes</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to ABP Classes!</h1>
-        <p>Explore our available batches and send an enrollment request.</p>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">ABP Classes</a>
+            <ul>
+                <li><a href="user-home.html">My Dashboard</a></li>
+                <li><a href="user-my-batches.html">My Batches</a></li>
+                <li><a href="#" id="logoutButton">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
 
-        <button class="logout-btn">Logout</button>
+    <main class="container">
+        <h1 style="color: var(--primary-color);">Welcome, <span id="userDisplayName"></span>!</h1>
 
-        <h2>Available Batches</h2>
-        <div class="batch-list" id="batchList">
-            <p>Loading batches...</p>
-        </div>
-        <p class="message" id="enrollmentMessage"></p>
+        <section class="dashboard-section">
+            <h3>My Enrolled Batches</h3>
+            <div id="enrolledBatchesList">
+                <p>Loading your batches...</p>
+            </div>
+        </section>
 
-        <div class="nav">
-            <a href="user-my-batches.html">My Batches</a>
-        </div>
-    </div>
+        <section class="dashboard-section">
+            <h3>Upcoming Classes & Events</h3>
+            <ul id="upcomingClassesList" style="list-style: none; padding: 0;">
+                <li><p>No upcoming classes or events for now.</p></li>
+            </ul>
+        </section>
 
-    <script type="module" src="js/firebase-init.js"></script>
-    <script type="module" src="js/auth.js"></script>
-    <script type="module" src="js/user.js"></script>
+        <section class="dashboard-section">
+            <h3>Announcements</h3>
+            <ul id="announcementsList" style="list-style: none; padding: 0;">
+                <li><p>No recent announcements.</p></li>
+            </ul>
+        </section>
+
+        </main>
+
+    <script type="module" src="user.js"></script>
 </body>
 </html>

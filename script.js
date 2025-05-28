@@ -1,21 +1,30 @@
-function login() {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
+// script.js
+import { onAuthStateChange, isAdmin } from './utils/auth.js';
+import { renderLogin } from './components/login.js';
+import { renderAdminDashboard } from './components/admin-dashboard.js';
+import { renderStudentDashboard } from './components/student-dashboard.js';
 
-  firebase.auth().signInWithEmailAndPassword(email, password)
-    .then(() => {
-      window.location.href = "admin.html";
-    })
-    .catch((error) => {
-      alert("Login Failed: " + error.message);
-    });
-}
+const appContainer = document.getElementById('app');
 
-// Optional: protect admin page
-if (window.location.pathname.includes('admin.html')) {
-  firebase.auth().onAuthStateChanged((user) => {
-    if (!user) {
-      window.location.href = "index.html";
+// Function to render the appropriate dashboard or login page
+function renderApp(user) {
+    if (user) {
+        if (isAdmin(user)) {
+            renderAdminDashboard(appContainer);
+        } else {
+            renderStudentDashboard(appContainer);
+        }
+    } else {
+        // No user logged in, show login page
+        renderLogin(appContainer, (loggedInUser) => {
+            // Callback after successful login, re-render app
+            renderApp(loggedInUser);
+        });
     }
-  });
 }
+
+// Listen for authentication state changes
+onAuthStateChange(user => {
+    console.log("Auth state changed. Current user:", user ? user.email : "None");
+    renderApp(user);
+});

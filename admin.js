@@ -1,188 +1,303 @@
-// js/admin.js
+// admin.js
 
-import { auth, db } from './firebase-init.js';
-import { setupAuthProtection } from './auth.js';
-import {
-    signInWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { loginUser, logoutUser, setupAuthListener, isAdmin, registerUser } from './auth.js';
+import { db, storage } from './firebase-init.js';
 import {
     collection,
-    addDoc,
-    query,
-    where,
     getDocs,
     doc,
+    getDoc,
+    addDoc,
     updateDoc,
-    getDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    deleteDoc,
+    query,
+    where,
+    serverTimestamp // For adding timestamps
+} from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+// --- DOM Elements ---
 const adminLoginForm = document.getElementById('adminLoginForm');
 const adminLoginMessage = document.getElementById('adminLoginMessage');
-const createBatchForm = document.getElementById('createBatchForm');
-const batchMessage = document.getElementById('batchMessage');
-const enrollmentRequestsList = document.getElementById('enrollmentRequestsList');
-const requestActionMessage = document.getElementById('requestActionMessage');
+const adminLoginButton = document.getElementById('adminLoginButton');
 
-// --- Admin Login Logic ---
+const adminLogoutButton = document.getElementById('adminLogoutButton');
+const adminDashboardStats = document.getElementById('adminDashboardStats');
+const userCountDisplay = document.getElementById('userCountDisplay');
+const batchCountDisplay = document.getElementById('batchCountDisplay');
+
+const manageUsersSection = document.getElementById('manageUsersSection');
+const userList = document.getElementById('userList');
+const addUserForm = document.getElementById('addUserForm');
+const addUserMessage = document.getElementById('addUserMessage');
+
+const manageBatchesSection = document.getElementById('manageBatchesSection');
+const batchList = document.getElementById('batchList');
+const addBatchForm = document.getElementById('addBatchForm');
+const addBatchMessage = document.getElementById('addBatchMessage');
+
+
+// --- Helper for messages ---
+function displayMessage(element, message, type) {
+    element.textContent = message;
+    element.className = `message ${type}`;
+    element.style.display = 'block';
+}
+
+function clearMessage(element) {
+    element.textContent = '';
+    element.className = 'message';
+    element.style.display = 'none';
+}
+
+
+// --- Admin Login Page Logic (`admin-login.html`) ---
 if (adminLoginForm) {
     adminLoginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        clearMessage(adminLoginMessage);
+        adminLoginButton.disabled = true;
+
         const email = adminLoginForm['adminEmail'].value;
         const password = adminLoginForm['adminPassword'].value;
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // After successful login, check if the user is an admin in Firestore
-            const userDocRef = doc(db, "users", user.uid);
-            const userDocSnap = await getDoc(userDocRef);
-
-            if (userDocSnap.exists() && userDocSnap.data().isAdmin) {
-                adminLoginMessage.className = 'message success';
-                adminLoginMessage.textContent = 'Admin login successful! Redirecting...';
-                setTimeout(() => {
-                    window.location.href = 'admin-dashboard.html';
-                }, 1500);
+            const userData = await loginUser(email, password); // Use the general login
+            if (userData && userData.role === 'admin') {
+                window.location.href = 'admin-dashboard.html';
             } else {
-                // Not an admin
-                await auth.signOut(); // Log them out immediately
-                adminLoginMessage.className = 'message error';
-                adminLoginMessage.textContent = 'Access Denied: You are not an administrator.';
+                // If a non-admin tries to login here, log them out
+                await logoutUser();
+                displayMessage(adminLoginMessage, "Access Denied: You do not have admin privileges.", "error");
             }
         } catch (error) {
-            adminLoginMessage.className = 'message error';
-            adminLoginMessage.textContent = error.message;
-            console.error("Admin Login error:", error);
+            let errorMessage = "Admin login failed. Invalid credentials.";
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                errorMessage = "Invalid email or password for admin.";
+            }
+            displayMessage(adminLoginMessage, errorMessage, "error");
+        } finally {
+            adminLoginButton.disabled = false;
         }
     });
 }
 
-// --- Admin Dashboard Logic ---
-// Apply auth protection for admin dashboard
-if (document.body.id === 'admin-dashboard') { // You could add an ID to the body of admin-dashboard.html
-    setupAuthProtection('admin-login.html', true); // True means it will check for isAdmin flag
-    fetchPendingEnrollmentRequests(); // Load requests on dashboard load
-}
-
-// --- Create Batch Form Submission ---
-if (createBatchForm) {
-    createBatchForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = createBatchForm['batchName'].value;
-        const description = createBatchForm['batchDescription'].value;
-        const startDate = createBatchForm['batchStartDate'].value; // This will be YYYY-MM-DD
-
-        try {
-            await addDoc(collection(db, "batches"), {
-                name: name,
-                description: description,
-                startDate: startDate,
-                createdAt: new Date()
-                // You can add more fields like 'capacity', 'price', etc.
-            });
-            batchMessage.className = 'message success';
-            batchMessage.textContent = 'Batch created successfully!';
-            createBatchForm.reset(); // Clear form
-            setTimeout(() => batchMessage.textContent = '', 3000);
-        } catch (error) {
-            batchMessage.className = 'message error';
-            batchMessage.textContent = 'Error creating batch: ' + error.message;
-            console.error("Error creating batch:", error);
-        }
-    });
-}
-
-// --- Fetch and Display Pending Enrollment Requests ---
-async function fetchPendingEnrollmentRequests() {
-    if (!enrollmentRequestsList) return; // Only run if on the correct page
-
-    enrollmentRequestsList.innerHTML = '<p>Loading pending requests...</p>';
-    try {
-        const q = query(collection(db, "enrollmentRequests"), where("status", "==", "pending"));
-        const querySnapshot = await getDocs(q);
-
-        let requestsHtml = '';
-        if (querySnapshot.empty) {
-            requestsHtml = '<p>No pending enrollment requests.</p>';
+// --- Admin Dashboard Logic (`admin-dashboard.html`) ---
+if (adminLogoutButton) {
+    setupAuthListener(async (user) => {
+        if (user && user.role === 'admin') {
+            // User is an admin, load dashboard data
+            document.getElementById('adminDisplayName').textContent = user.displayName || user.email;
+            await loadAdminDashboardData();
         } else {
-            const requestPromises = querySnapshot.docs.map(async (docSnapshot) => {
-                const request = docSnapshot.data();
-                const requestId = docSnapshot.id;
+            // Not an admin or logged out, redirect to admin login
+            window.location.href = 'admin-login.html';
+        }
+    });
 
-                // Fetch user details
-                const userDoc = await getDoc(doc(db, "users", request.userId));
-                const userData = userDoc.exists() ? userDoc.data() : { username: 'Unknown User', email: 'N/A' };
+    adminLogoutButton.addEventListener('click', async () => {
+        try {
+            await logoutUser();
+            window.location.href = 'admin-login.html';
+        } catch (error) {
+            console.error("Admin logout failed:", error);
+            alert("Admin logout failed. Please try again.");
+        }
+    });
 
-                // Fetch batch details
-                const batchDoc = await getDoc(doc(db, "batches", request.batchId));
-                const batchData = batchDoc.exists() ? batchDoc.data() : { name: 'Unknown Batch' };
+    async function loadAdminDashboardData() {
+        try {
+            // Fetch user count
+            const usersSnapshot = await getDocs(collection(db, "users"));
+            userCountDisplay.textContent = usersSnapshot.size;
 
-                return `
-                    <div class="request-card">
-                        <h3>${batchData.name}</h3>
-                        <p>User: ${userData.username} (${userData.email})</p>
-                        <p>Requested On: ${request.requestDate ? new Date(request.requestDate.toDate()).toLocaleDateString() : 'N/A'}</p>
-                        <button class="approve-btn" data-request-id="${requestId}" data-user-id="${request.userId}" data-batch-id="${request.batchId}">Approve</button>
-                        <button class="deny-btn" data-request-id="${requestId}">Deny</button>
+            // Fetch batch count
+            const batchesSnapshot = await getDocs(collection(db, "batches"));
+            batchCountDisplay.textContent = batchesSnapshot.size;
+
+            // Load and display users for management
+            await loadUsers();
+            // Load and display batches for management
+            await loadBatches();
+
+        } catch (error) {
+            console.error("Error loading admin dashboard data:", error);
+            adminDashboardStats.innerHTML = '<p class="error">Failed to load dashboard data.</p>';
+        }
+    }
+
+    // --- User Management ---
+    async function loadUsers() {
+        userList.innerHTML = '<li>Loading users...</li>';
+        try {
+            const q = query(collection(db, "users"));
+            const querySnapshot = await getDocs(q);
+            userList.innerHTML = ''; // Clear existing
+            querySnapshot.forEach((doc) => {
+                const user = doc.data();
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${user.displayName || user.email} (${user.role})</span>
+                    <div>
+                        <button onclick="editUser('${doc.id}')">Edit</button>
+                        <button onclick="deleteUser('${doc.id}')">Delete</button>
                     </div>
                 `;
+                userList.appendChild(li);
             });
-            const resolvedRequestsHtml = await Promise.all(requestPromises);
-            requestsHtml = resolvedRequestsHtml.join('');
+            if (querySnapshot.empty) {
+                userList.innerHTML = '<li>No users found.</li>';
+            }
+        } catch (error) {
+            console.error("Error loading users:", error);
+            userList.innerHTML = '<li class="error">Failed to load users.</li>';
         }
-        enrollmentRequestsList.innerHTML = requestsHtml;
-
-        // Add event listeners for approve/deny buttons
-        document.querySelectorAll('.approve-btn').forEach(button => {
-            button.addEventListener('click', handleEnrollmentAction);
-        });
-        document.querySelectorAll('.deny-btn').forEach(button => {
-            button.addEventListener('click', handleEnrollmentAction);
-        });
-
-    } catch (error) {
-        console.error("Error fetching pending requests:", error);
-        enrollmentRequestsList.innerHTML = '<p class="message error">Error loading requests. Please try again.</p>';
     }
-}
 
-// --- Handle Approve/Deny Action ---
-async function handleEnrollmentAction(event) {
-    const requestId = event.target.dataset.requestId;
-    const action = event.target.classList.contains('approve-btn') ? 'approved' : 'denied';
-
-    try {
-        const requestDocRef = doc(db, "enrollmentRequests", requestId);
-        await updateDoc(requestDocRef, { status: action });
-
-        if (action === 'approved') {
-            requestActionMessage.className = 'message success';
-            requestActionMessage.textContent = `Request ${requestId} approved!`;
-            // Optional: You could also add a reference to the user's document for approved batches
-            // e.g., await updateDoc(doc(db, "users", event.target.dataset.userId), {
-            //     [`enrolledBatches.${event.target.dataset.batchId}`]: true
-            // });
-        } else {
-            requestActionMessage.className = 'message error';
-            requestActionMessage.textContent = `Request ${requestId} denied.`;
-            // Optional: Ask for denial reason here with a prompt or modal
-            // const reason = prompt("Enter reason for denial (optional):");
-            // if (reason) {
-            //     await updateDoc(requestDocRef, { denialReason: reason });
-            // }
+    // Example functions for user management (implement modals/forms for details)
+    window.editUser = async (userId) => {
+        alert("Edit user functionality for " + userId + " will be implemented here.");
+        // Implement a modal or new page to edit user details
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+            console.log("Editing user:", userDoc.data());
+            // Populate a form with userDoc.data()
         }
+    };
 
-        // Re-fetch requests to update the list
-        fetchPendingEnrollmentRequests();
-        setTimeout(() => requestActionMessage.textContent = '', 3000);
+    window.deleteUser = async (userId) => {
+        if (confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+            try {
+                await deleteDoc(doc(db, "users", userId));
+                alert("User deleted successfully!");
+                loadUsers(); // Reload list
+            } catch (error) {
+                console.error("Error deleting user:", error);
+                alert("Failed to delete user: " + error.message);
+            }
+        }
+    };
 
-    } catch (error) {
-        console.error(`Error ${action} request:`, error);
-        requestActionMessage.className = 'message error';
-        requestActionMessage.textContent = `Failed to ${action} request: ` + error.message;
+    if (addUserForm) {
+        addUserForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessage(addUserMessage);
+            const email = addUserForm['newUserEmail'].value;
+            const password = addUserForm['newUserPassword'].value;
+            const displayName = addUserForm['newUserName'].value;
+            const role = addUserForm['newUserRole'].value;
+
+            try {
+                // Use the auth.js register function, passing the role
+                await registerUser(email, password, displayName, role);
+                displayMessage(addUserMessage, "User added successfully!", "success");
+                addUserForm.reset();
+                loadUsers(); // Reload user list
+            } catch (error) {
+                displayMessage(addUserMessage, "Error adding user: " + error.message, "error");
+            }
+        });
     }
-}
 
-// Ensure the admin dashboard loads requests if the user is already logged in
-// This is done by the setupAuthProtection in auth.js which will call fetchPendingEnrollmentRequests if applicable.
+    // --- Batch/Course Management ---
+    async function loadBatches() {
+        batchList.innerHTML = '<li>Loading batches...</li>';
+        try {
+            const q = query(collection(db, "batches"));
+            const querySnapshot = await getDocs(q);
+            batchList.innerHTML = ''; // Clear existing
+            querySnapshot.forEach((doc) => {
+                const batch = doc.data();
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${batch.name} (Course: ${batch.courseName || 'N/A'})</span>
+                    <div>
+                        <button onclick="editBatch('${doc.id}')">Edit</button>
+                        <button onclick="deleteBatch('${doc.id}')">Delete</button>
+                    </div>
+                `;
+                batchList.appendChild(li);
+            });
+            if (querySnapshot.empty) {
+                batchList.innerHTML = '<li>No batches found.</li>';
+            }
+        } catch (error) {
+            console.error("Error loading batches:", error);
+            batchList.innerHTML = '<li class="error">Failed to load batches.</li>';
+        }
+    }
+
+    window.editBatch = async (batchId) => {
+        alert("Edit batch functionality for " + batchId + " will be implemented here.");
+        const batchDoc = await getDoc(doc(db, "batches", batchId));
+        if (batchDoc.exists()) {
+            console.log("Editing batch:", batchDoc.data());
+            // Populate a form with batchDoc.data()
+        }
+    };
+
+    window.deleteBatch = async (batchId) => {
+        if (confirm("Are you sure you want to delete this batch? This action cannot be undone.")) {
+            try {
+                await deleteDoc(doc(db, "batches", batchId));
+                alert("Batch deleted successfully!");
+                loadBatches(); // Reload list
+            } catch (error) {
+                console.error("Error deleting batch:", error);
+                alert("Failed to delete batch: " + error.message);
+            }
+        }
+    };
+
+    if (addBatchForm) {
+        addBatchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessage(addBatchMessage);
+
+            const batchName = addBatchForm['newBatchName'].value;
+            const courseName = addBatchForm['newBatchCourseName'].value;
+            const instructor = addBatchForm['newBatchInstructor'].value;
+            const startDate = addBatchForm['newBatchStartDate'].value;
+            const description = addBatchForm['newBatchDescription'].value;
+
+            try {
+                await addDoc(collection(db, "batches"), {
+                    name: batchName,
+                    courseName: courseName,
+                    instructor: instructor,
+                    startDate: new Date(startDate), // Convert to Firestore Timestamp
+                    description: description,
+                    createdAt: serverTimestamp()
+                });
+                displayMessage(addBatchMessage, "Batch added successfully!", "success");
+                addBatchForm.reset();
+                loadBatches(); // Reload batch list
+            } catch (error) {
+                displayMessage(addBatchMessage, "Error adding batch: " + error.message, "error");
+            }
+        });
+    }
+
+    // --- Example of file upload (e.g., for study materials) ---
+    // You'd integrate this into a separate 'Upload Materials' section
+    // async function uploadStudyMaterial(file, batchId, title) {
+    //     try {
+    //         const storageRef = ref(storage, `batches/${batchId}/materials/${file.name}`);
+    //         const snapshot = await uploadBytes(storageRef, file);
+    //         const downloadURL = await getDownloadURL(snapshot.ref);
+    //
+    //         // Save material metadata to Firestore
+    //         await addDoc(collection(db, "batches", batchId, "materials"), {
+    //             title: title,
+    //             url: downloadURL,
+    //             fileName: file.name,
+    //             uploadedAt: serverTimestamp()
+    //         });
+    //         console.log("Material uploaded and linked:", downloadURL);
+    //         return downloadURL;
+    //     } catch (error) {
+    //         console.error("Error uploading material:", error);
+    //         throw error;
+    //     }
+    // }
+}

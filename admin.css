@@ -1,3 +1,6 @@
+/* Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
 * {
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif;
@@ -5,60 +8,77 @@
 
 body {
   margin: 0;
-  padding: 20px;
-  background-color: #f9f9fb;
+  padding: 0;
+  background-color: #f2f6fc;
   color: #333;
 }
 
 h1 {
   text-align: center;
+  margin: 40px 0 20px;
+  font-size: 36px;
   color: #2c3e50;
-  margin-bottom: 30px;
 }
 
 .dashboard {
   max-width: 1000px;
-  margin: 0 auto;
+  margin: auto;
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 30px;
+  padding: 0 20px 40px;
 }
 
 .card {
-  background: white;
-  padding: 25px;
+  background-color: #fff;
+  padding: 30px;
   border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-  transition: transform 0.2s ease;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
 }
 
 .card h2 {
-  margin-top: 0;
-  font-size: 20px;
+  margin: 0 0 20px;
+  font-size: 22px;
   color: #2980b9;
-  margin-bottom: 15px;
 }
 
-.card input, .card select, .card button {
-  margin-bottom: 12px;
-  padding: 10px;
+.card input,
+.card select {
+  margin-bottom: 15px;
+  padding: 12px 14px;
   width: 100%;
-  max-width: 400px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  max-width: 500px;
+  border: 1px solid #d0d7e2;
+  border-radius: 10px;
+  font-size: 16px;
+  background-color: #fdfdfd;
+  transition: border-color 0.3s ease;
+}
+
+.card input:focus,
+.card select:focus {
+  border-color: #3498db;
+  outline: none;
 }
 
 .card button {
+  margin-top: 10px;
+  padding: 12px 20px;
   background-color: #3498db;
-  color: white;
-  font-weight: 600;
+  color: #fff;
   border: none;
+  font-weight: 600;
+  font-size: 16px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background-color 0.3s ease;
+  width: fit-content;
 }
 
 .card button:hover {
@@ -66,7 +86,9 @@ h1 {
 }
 
 @media (max-width: 600px) {
-  .card input, .card select, .card button {
+  .card input,
+  .card select,
+  .card button {
     width: 100%;
+    max-width: 100%;
   }
-}

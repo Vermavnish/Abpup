@@ -1,37 +1,21 @@
-const auth = firebase.auth();
-
-document.getElementById('showLogin').onclick = () => {
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('signupForm').style.display = 'none';
-};
-
-document.getElementById('showSignup').onclick = () => {
-  document.getElementById('signupForm').style.display = 'block';
-  document.getElementById('loginForm').style.display = 'none';
-};
-
 function login() {
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
 
-  auth.signInWithEmailAndPassword(email, password)
-    .then(userCredential => {
-      document.getElementById('message').innerText = "Login successful!";
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .then(() => {
+      window.location.href = "admin.html";
     })
-    .catch(error => {
-      document.getElementById('message').innerText = error.message;
+    .catch((error) => {
+      alert("Login Failed: " + error.message);
     });
 }
 
-function signup() {
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
-
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(userCredential => {
-      document.getElementById('message').innerText = "Signup successful!";
-    })
-    .catch(error => {
-      document.getElementById('message').innerText = error.message;
-    });
+// Optional: protect admin page
+if (window.location.pathname.includes('admin.html')) {
+  firebase.auth().onAuthStateChanged((user) => {
+    if (!user) {
+      window.location.href = "index.html";
+    }
+  });
 }
